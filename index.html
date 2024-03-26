@@ -155,6 +155,7 @@ permissions and limitations under the License.
 
 <script type="text/javascript">
     var HIDE_INDEX = true;
+    var HIDE_GITIGNORE = true;
     // CloudFront Support
     var HIDE_S3_ID = true;
     var s3exp_config = {
@@ -424,6 +425,14 @@ permissions and limitations under the License.
                         console.log("Filter: remove index.html");
                         data.Contents = data.Contents.filter(function(el) {
                             return el.Key !== "index.html";
+                        });
+                    }
+
+                    // Optionally, filter the root .gitignore out of the listed S3 objects
+                    if (HIDE_GITIGNORE) {
+                        console.log("Filter: remove .gitignore");
+                        data.Contents = data.Contents.filter(function(el) {
+                            return el.Key !== ".gitignore";
                         });
                     }
 
