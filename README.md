@@ -2,9 +2,11 @@
 
 Note: if you are looking for the newer, read-write version of this tool that supports non-public S3 buckets then please visit the [S3 Explorer (v2 alpha)](https://github.com/awslabs/aws-js-s3-explorer/tree/v2-alpha) page.
 
-AWS JavaScript S3 Explorer is a JavaScript application that uses AWS's JavaScript SDK and S3 APIs to make the contents of an S3 bucket easy to browse via a web browser. We've created this to enable easier sharing of objects and data via Amazon S3.
+AWS JavaScript S3 Explorer is a JavaScript application that uses AWS's JavaScript SDK and S3 APIs to make the contents of a public S3 bucket easy to browse via a web browser. We've created this to enable easier sharing of public objects and data via Amazon S3.
 
 The index.html file in this bucket contains the entire application. A visitor to the index.html page is prompted to enter the name of an Amazon S3 bucket. Upon adding the bucket name, the contents of the bucket will be rendered on the page.
+
+**Important**: unless you explicitly want everyone on the internet to be able to read your S3 bucket, you should ensure that your S3 bucket is **not** public. If you want to support private S3 buckets then please visit the [S3 Explorer (v2 alpha)](https://github.com/awslabs/aws-js-s3-explorer/tree/v2-alpha) page. You can read more at [Security Best Practices for Amazon S3](https://docs.aws.amazon.com/AmazonS3/latest/dev/security-best-practices.html).
 
 ## Screenshots
 
@@ -99,21 +101,29 @@ If you decide to access your index.html file via a path-style URL (#1 above) the
 
 For security reasons, browsers normally block requests by JavaScript code to access URLs that are unrelated to the source of the code (such as the contents of your bucket), but with CORS, we can configure your bucket to explicitly enable JavaScript to do this.
 
-To configure your bucket to allow cross-origin requests, you create a CORS configuration, which is an XML document with rules that identify the origins that you will allow to access your bucket, the operations (HTTP methods) will support for each origin, and other operation-specific information.
+To configure your bucket to allow cross-origin requests, you create a CORS configuration, which is a JSON document with rules that identify the origins that you will allow to access your bucket, the operations (HTTP methods) will support for each origin, and other operation-specific information.
 
 To do this, click your bucket in the bucket list within the Amazon S3 Console and then click the Permissions tab. Click the CORS Configuration button. The CORS Configuration Editor panel will open up with a textfield where you can enter a CORS Configuration. Enter the following configuration:
 
-```xml
-<CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-  <CORSRule>
-    <AllowedOrigin>https://s3.amazonaws.com</AllowedOrigin>
-    <AllowedMethod>HEAD</AllowedMethod>
-    <AllowedMethod>GET</AllowedMethod>
-    <AllowedHeader>*</AllowedHeader>
-    <ExposeHeader>ETag</ExposeHeader>
-    <ExposeHeader>x-amz-meta-custom-header</ExposeHeader>
-  </CORSRule>
-</CORSConfiguration>
+```json
+[
+  {
+    "AllowedHeaders": [
+      "*"
+    ],
+    "AllowedMethods": [
+      "HEAD",
+      "GET"
+    ],
+    "AllowedOrigins": [
+      "https://s3.amazonaws.com"
+    ],
+    "ExposeHeaders": [
+      "ETag",
+      "x-amz-meta-custom-header"
+    ]
+  }
+]
 ```
 
 Note that this does not authorize the user to perform any actions on the bucket, it simply enables the browser's security model to allow a request to S3. Actual permissions for the user must be configured either via bucket permissions, or IAM role level permissions.
@@ -122,9 +132,12 @@ If your S3 bucket is hosted outside of the US East (Northern Virginia) region (u
 
 To use path-style URLs, you should supplement your CORS configuration to include additional allowed origins representing the region-specific S3 endpoints, for example s3-us-west-2.amazonaws.com and s3.us-west-2.amazonaws.com, as follows:
 
-```xml
-    <AllowedOrigin>https://s3-us-west-2.amazonaws.com</AllowedOrigin>
-    <AllowedOrigin>https://s3.us-west-2.amazonaws.com</AllowedOrigin>
+```json
+    "AllowedOrigins": [
+      "https://s3.amazonaws.com",
+      "https://s3-us-west-2.amazonaws.com",
+      "https://s3.us-west-2.amazonaws.com"
+    ]
 ```
 
 ### Static Website Hosting
@@ -140,14 +153,18 @@ You also have the option to enable 'Static Website Hosting' on your S3 bucket. I
 
 If you choose to do this, then you will also need to modify the CORS configuration above to include:
 
-```xml
-  <AllowedOrigin>https://BUCKET-NAME.s3.amazonaws.com</AllowedOrigin>
+```json
+  "AllowedOrigins": [
+    "https://BUCKET-NAME.s3.amazonaws.com"
+  ]
 ```
 
 Or as follows, if in a bucket outside of US East (N. Virginia):
 
-```xml
-  <AllowedOrigin>https://BUCKET-NAME.s3.us-west-2.amazonaws.com</AllowedOrigin>
+```json
+  "AllowedOrigins": [
+    "https://BUCKET-NAME.s3.us-west-2.amazonaws.com"
+  ]
 ```
 
 Note that when you configure a bucket for website hosting, the two general forms of an Amazon S3 website endpoint are as follows:
@@ -160,3 +177,8 @@ Note the dash (-) between s3-website and the region identifier. Which form is us
 ## Display Options
 
 This application allows visitors to view the contents of a bucket via its folders or by listing out all objects in a bucket. The default view is by folder, but users can click on &ldquo;Bucket&rdquo; toward the top-right of the page to display all objects in the bucket. Note clicking on &ldquo;Bucket&rdquo; will load all objects in the bucket into the browser. If your bucket contains many objects, this could overwhelm the browser. We&rsquo;ve successfully tested this application on a bucket with over 30,000 objects, but keep in mind that trying to load too many objects in a browser could lead to a poor user experience.
+
+## CloudFront support
+
+You can now run this application with a CloudFront distribution in front of your S3 bucket.  To enable CloudFront support, the application requires a public file called "s3_id.txt" to be in the root of the bucket.  The value of the file must be the full S3 bucketname, such as: "foobucket.s3.amazonaws.com".
+
